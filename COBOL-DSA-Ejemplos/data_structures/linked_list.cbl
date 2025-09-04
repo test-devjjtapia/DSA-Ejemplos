@@ -1,0 +1,114 @@
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LINKED-LIST-DEMO.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 NODE-MEMORY.
+          05 NODE-TABLE OCCURS 20 TIMES INDEXED BY NODE-IDX.
+             10 NODE-DATA PIC X(10).
+             10 NODE-NEXT PIC 9(2).
+             10 NODE-ACTIVE PIC 9(1) VALUE 0. *> 0: free, 1: used
+
+       01 HEAD-POINTER PIC 9(2) VALUE 0.
+       01 FREE-POINTER PIC 9(2) VALUE 1.
+       01 CURRENT-POINTER PIC 9(2).
+       01 PREV-POINTER PIC 9(2).
+
+       01 NEW-DATA PIC X(10).
+       01 DATA-TO-DELETE PIC X(10).
+
+       PROCEDURE DIVISION.
+
+       DISPLAY "--- INICIALIZANDO LISTA ENLAZADA ---".
+       DISPLAY "¿Lista vacia? " (IF HEAD-POINTER = 0 THEN "Si" ELSE "No").
+
+       DISPLAY " ".
+       DISPLAY "--- AÑADIENDO ELEMENTOS (APPEND) ---".
+       MOVE "A" TO NEW-DATA.
+       PERFORM APPEND-NODE.
+       MOVE "B" TO NEW-DATA.
+       PERFORM APPEND-NODE.
+       MOVE "C" TO NEW-DATA.
+       PERFORM APPEND-NODE.
+       PERFORM DISPLAY-LIST.
+
+       DISPLAY " ".
+       DISPLAY "--- AÑADIENDO AL INICIO (PREPEND) ---".
+       MOVE "Inicio" TO NEW-DATA.
+       PERFORM PREPEND-NODE.
+       PERFORM DISPLAY-LIST.
+
+       DISPLAY " ".
+       DISPLAY "--- ELIMINANDO ELEMENTOS ---".
+       MOVE "B" TO DATA-TO-DELETE.
+       PERFORM DELETE-NODE.
+       DISPLAY "Despues de eliminar 'B':".
+       PERFORM DISPLAY-LIST.
+
+       STOP RUN.
+
+       APPEND-NODE.
+           IF FREE-POINTER > 20
+               DISPLAY "Error: Memoria de nodos llena."
+               STOP RUN
+           END-IF.
+           MOVE NEW-DATA TO NODE-DATA(FREE-POINTER).
+           MOVE 1 TO NODE-ACTIVE(FREE-POINTER).
+           MOVE 0 TO NODE-NEXT(FREE-POINTER).
+           IF HEAD-POINTER = 0
+               MOVE FREE-POINTER TO HEAD-POINTER
+           ELSE
+               MOVE HEAD-POINTER TO CURRENT-POINTER
+               PERFORM UNTIL NODE-NEXT(CURRENT-POINTER) = 0
+                   MOVE NODE-NEXT(CURRENT-POINTER) TO CURRENT-POINTER
+               END-PERFORM
+               MOVE FREE-POINTER TO NODE-NEXT(CURRENT-POINTER)
+           END-IF.
+           ADD 1 TO FREE-POINTER.
+
+       PREPEND-NODE.
+           IF FREE-POINTER > 20
+               DISPLAY "Error: Memoria de nodos llena."
+               STOP RUN
+           END-IF.
+           MOVE NEW-DATA TO NODE-DATA(FREE-POINTER).
+           MOVE 1 TO NODE-ACTIVE(FREE-POINTER).
+           MOVE HEAD-POINTER TO NODE-NEXT(FREE-POINTER).
+           MOVE FREE-POINTER TO HEAD-POINTER.
+           ADD 1 TO FREE-POINTER.
+
+       DELETE-NODE.
+           IF HEAD-POINTER = 0
+               DISPLAY "Lista vacia, no se puede eliminar."
+               EXIT PARAGRAPH
+           END-IF.
+           MOVE HEAD-POINTER TO CURRENT-POINTER.
+           MOVE 0 TO PREV-POINTER.
+           PERFORM UNTIL CURRENT-POINTER = 0 OR NODE-DATA(CURRENT-POINTER) = DATA-TO-DELETE
+               MOVE CURRENT-POINTER TO PREV-POINTER
+               MOVE NODE-NEXT(CURRENT-POINTER) TO CURRENT-POINTER
+           END-PERFORM.
+           IF CURRENT-POINTER NOT = 0
+               IF PREV-POINTER = 0
+                   MOVE NODE-NEXT(CURRENT-POINTER) TO HEAD-POINTER
+               ELSE
+                   MOVE NODE-NEXT(CURRENT-POINTER) TO NODE-NEXT(PREV-POINTER)
+               END-IF
+               MOVE 0 TO NODE-ACTIVE(CURRENT-POINTER)
+           ELSE
+               DISPLAY "Dato '" DATA-TO-DELETE "' no encontrado."
+           END-IF.
+
+       DISPLAY-LIST.
+           IF HEAD-POINTER = 0
+               DISPLAY "Lista vacia."
+           ELSE
+               MOVE HEAD-POINTER TO CURRENT-POINTER
+               DISPLAY "HEAD -> " WITH NO ADVANCING
+               PERFORM UNTIL CURRENT-POINTER = 0
+                   DISPLAY FUNCTION TRIM(NODE-DATA(CURRENT-POINTER)) " -> " WITH NO ADVANCING
+                   MOVE NODE-NEXT(CURRENT-POINTER) TO CURRENT-POINTER
+               END-PERFORM
+               DISPLAY "None"
+           END-IF.
